@@ -144,6 +144,49 @@
 
     .accordion-content { margin-top: 15px; }
 
+    /* GitHub Audio Files List */
+    .gh-list-container {
+      background: var(--folder-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 15px;
+    }
+
+    .gh-file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px;
+      border-bottom: 1px solid var(--border-color);
+      gap: 10px;
+    }
+
+    .gh-file-item:last-child {
+      border-bottom: none;
+    }
+
+    .gh-file-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-color);
+      word-break: break-all;
+      flex: 1;
+    }
+
+    .gh-file-action {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .gh-char-input {
+      width: 60px !important;
+      padding: 4px 8px !important;
+      font-size: 13px !important;
+      text-align: center;
+    }
+
     .mapping-list {
       margin-top: 12px;
       font-size: 14px;
@@ -593,10 +636,20 @@
     <details class="accordion" open>
       <summary>1. Audio & Character Mapping</summary>
       <div class="accordion-content">
+        
+        <!-- GitHub Repository Audio List -->
+        <label>GitHub Audio Files (yuki200/Text-sampler)</label>
+        <div class="gh-list-container" id="gh-file-list">
+          Loading audio files from GitHub...
+        </div>
+
+        <!-- Local Upload Fallback -->
+        <label style="margin-top: 15px;">Local File Upload</label>
         <div style="display: flex; gap: 10px; margin-bottom: 10px;">
           <input type="text" id="target-char" placeholder="Char (e.g. a)" maxlength="2" style="width: 120px;">
           <input type="file" id="audio-file" accept="audio/*">
         </div>
+
         <div class="mapping-list" id="mapping-list">
           No audio mapped yet.
         </div>
@@ -643,8 +696,8 @@
 
     // Library data
     const libraryData = {
-      "Favorites": ["abc", "a-b-c", "aabbcc"],
-      "Rhythms": ["a---b---", "a-b-c-d-"]
+      "Favorites": ["dt", "d-t-d-t-", "ddttddtt"],
+      "Rhythms": ["d---t---", "d-t-d-t-"]
     };
 
     let draggedItem = null;
@@ -656,6 +709,7 @@
     const fileInput = document.getElementById('audio-file');
     const mappingList = document.getElementById('mapping-list');
     const clearAllBtn = document.getElementById('clear-all-btn');
+    const ghFileListEl = document.getElementById('gh-file-list');
 
     const tracksContainer = document.getElementById('tracks-container');
     const addTrackBtn = document.getElementById('add-track-btn');
@@ -673,6 +727,83 @@
       <option value="20">1/16 Quintuplet</option>
       <option value="24">1/16 Sextuplet</option>
     `;
+
+    // Fetch Audio Files from GitHub Repository
+    async function loadGitHubAudioFiles() {
+      const repoOwner = 'yuki200';
+      const repoName = 'Text-sampler';
+      const apiUrl = `https://api.github.com/repos/${repoOwner}/${repoName}/contents/`;
+
+      try {
+        const response = await fetch(apiUrl);
+        if (!response.ok) throw new Error('Failed to fetch repository contents');
+        const files = await response.json();
+
+        // Filter audio files
+        const audioExtensions = ['.wav', '.mp3', '.ogg', '.aac', '.m4a', '.flac'];
+        const audioFiles = files.filter(file => {
+          return file.type === 'file' && audioExtensions.some(ext => file.name.toLowerCase().endsWith(ext));
+        });
+
+        if (audioFiles.length === 0) {
+          ghFileListEl.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No audio files found in repository.</div>';
+          return;
+        }
+
+        ghFileListEl.innerHTML = '';
+        audioFiles.forEach(file => {
+          const defaultChar = file.name.charAt(0).toLowerCase();
+
+          const item = document.createElement('div');
+          item.className = 'gh-file-item';
+
+          item.innerHTML = `
+            <span class="gh-file-name">🎵 ${file.name}</span>
+            <div class="gh-file-action">
+              <input type="text" class="gh-char-input" id="char-input-${file.sha}" value="${defaultChar}" maxlength="2" placeholder="Key">
+              <button class="btn-play" onclick="mapGitHubAudio('${file.download_url}', '${file.name}', '${file.sha}')">Map</button>
+            </div>
+          `;
+
+          ghFileListEl.appendChild(item);
+        });
+
+      } catch (err) {
+        console.error(err);
+        ghFileListEl.innerHTML = '<div style="color: var(--danger-color); font-size: 13px;">Failed to load audio files from GitHub.</div>';
+      }
+    }
+
+    window.mapGitHubAudio = async function(downloadUrl, fileName, sha) {
+      const inputEl = document.getElementById(`char-input-${sha}`);
+      const char = inputEl ? inputEl.value.trim().toLowerCase() : '';
+
+      if (!char) {
+        alert('Please enter a character for mapping.');
+        return;
+      }
+
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+
+      try {
+        const response = await fetch(downloadUrl);
+        const arrayBuffer = await response.arrayBuffer();
+        const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+        soundMap[char] = {
+          buffer: audioBuffer,
+          fileName: fileName
+        };
+
+        updateMappingUI();
+      } catch (err) {
+        console.error(err);
+        alert(`Failed to load audio file: ${fileName}`);
+      }
+
+    };
 
     function renderTracks() {
       tracksContainer.innerHTML = '';
@@ -695,7 +826,7 @@
           </div>
           <div class="input-save-wrapper">
             <div class="typing-display-wrapper">
-              <input type="text" id="typing-input-${id}" class="typing-input-visible" placeholder="e.g. a-b-c-" value="">
+              <input type="text" id="typing-input-${id}" class="typing-input-visible" placeholder="e.g. dt..dt.." value="">
               <div id="typing-display-${id}" class="typing-overlay-display"></div>
             </div>
             <button class="btn-save-inline" onclick="handleQuickSave(${id})">💾 Save</button>
@@ -731,7 +862,6 @@
           }
         });
 
-        // Hide overlay display when focused for clean typing
         inputEl.addEventListener('focus', () => {
           const displayEl = document.getElementById(`typing-display-${id}`);
           if (displayEl && !isPlaying) displayEl.style.opacity = '0';
@@ -774,7 +904,6 @@
       const inputEl = document.getElementById(`typing-input-${trackId}`);
       if (!displayEl || !inputEl) return;
 
-      // Make overlay visible during playback
       displayEl.style.opacity = '1';
       inputEl.style.color = 'transparent';
 
@@ -794,7 +923,7 @@
         nodes.forEach(node => node.classList.remove('active'));
       }
       if (inputEl) {
-        inputEl.style.color = ''; // Restore native theme color
+        inputEl.style.color = '';
       }
     }
 
@@ -1170,6 +1299,7 @@
     }
 
     renderTracks();
+    loadGitHubAudioFiles();
   </script>
 </body>
 </html>
