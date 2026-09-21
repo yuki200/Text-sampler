@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Text Sampler - Multi Track</title>
+  <style>
+    :root {
+      --bg-color: #0f1117;
+      --card-bg: #161922;
+      --accent-t1: #00d2ff;
+      --accent-t2: #ff9f43;
+      --accent-t3: #a55eea;
+      --accent-t4: #2bcbba;
+      --text-color: #f0f3f8;
+      --text-muted: #7c889b;
+      --border-color: #232836;
+      --danger-color: #ff4757;
+      --gray-btn-bg: #1f2430;
+      --gray-btn-hover: #2b3242;
+      --folder-bg: #11131a;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      padding: 30px 20px;
+      max-width: 760px;
+      margin: 0 auto;
+      line-height: 1.6;
+    }
+
+    h1 {
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, var(--accent-t1) 0%, var(--accent-t3) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-top: 0;
+      margin-bottom: 25px;
+      text-align: center;
+    }
+
+    .control-group {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    input[type="number"], input[type="text"], select {
+      width: 100%;
+      padding: 10px 12px;
+      box-sizing: border-box;
+      font-size: 14px;
+      background-color: var(--folder-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      color: var(--text-color);
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input[type="number"]:focus, input[type="text"]:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-t1);
+      box-shadow: 0 0 8px rgba(0, 210, 255, 0.2);
+    }
+
+    /* BPM Control */
+    .bpm-control-wrapper {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      max-width: 320px;
+    }
+
+    .bpm-input-large {
+      font-size: 30px !important;
+      font-weight: 800;
+      text-align: center;
+      padding: 6px 12px !important;
+      height: 52px;
+    }
+
+    .btn-bpm-step {
+      padding: 12px 16px;
+      font-weight: bold;
+      font-size: 16px;
+      background: var(--gray-btn-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-bpm-step:hover {
+      background: var(--gray-btn-hover);
+      border-color: var(--accent-t1);
+    }
+
+    /* Accordion */
+    details.accordion summary {
+      cursor: pointer;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--text-muted);
+      font-weight: 700;
+      user-select: none;
+      outline: none;
+      list-style: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    details.accordion summary::-webkit-details-marker { display: none; }
+
+    details.accordion summary::after {
+      content: '▼';
+      font-size: 10px;
+      transition: transform 0.2s;
+    }
+
+    details.accordion[open] summary::after {
+      transform: rotate(180deg);
+    }
+
+    .accordion-content { margin-top: 15px; }
+
+    .mapping-list {
+      margin-top: 12px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .mapping-item {
+      background: var(--folder-bg);
+      padding: 10px 14px;
+      border: 1px solid var(--border-color);
+      margin-top: 8px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .mapping-info {
+      font-weight: 600;
+      color: var(--text-color);
+    }
+
+    .btn-group { display: flex; gap: 8px; }
+
+    button {
+      padding: 8px 14px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      border-radius: 6px;
+      transition: all 0.2s;
+    }
+
+    .btn-play {
+      background: rgba(0, 210, 255, 0.1);
+      border: 1px solid var(--accent-t1);
+      color: var(--accent-t1);
+    }
+
+    .btn-play:hover {
+      background: var(--accent-t1);
+      color: #000;
+    }
+
+    .btn-delete {
+      background: var(--gray-btn-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+    }
+
+    .btn-delete:hover {
+      background: rgba(255, 71, 87, 0.15);
+      border-color: var(--danger-color);
+      color: var(--danger-color);
+    }
+
+    .btn-clear {
+      background: var(--gray-btn-bg);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      padding: 10px;
+      margin-top: 12px;
+      width: 100%;
+    }
+
+    .btn-clear:hover {
+      background: rgba(255, 71, 87, 0.15);
+      border-color: var(--danger-color);
+      color: var(--danger-color);
+    }
+
+    .tracks-header-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .btn-add-track {
+      background: var(--gray-btn-bg);
+      color: var(--accent-t1);
+      border: 1px solid var(--accent-t1);
+      font-size: 12px;
+    }
+
+    .btn-add-track:hover {
+      background: var(--accent-t1);
+      color: #000;
+    }
+
+    .btn-add-track:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      border-color: var(--border-color);
+      color: var(--text-muted);
+    }
+
+    /* Track Cards */
+    .track-card {
+      background: var(--folder-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      position: relative;
+    }
+
+    .track-card[data-track="1"] { border-left: 4px solid var(--accent-t1); }
+    .track-card[data-track="2"] { border-left: 4px solid var(--accent-t2); }
+    .track-card[data-track="3"] { border-left: 4px solid var(--accent-t3); }
+    .track-card[data-track="4"] { border-left: 4px solid var(--accent-t4); }
+
+    .track-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .track-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 1px;
+    }
+
+    .track-card[data-track="1"] .track-title { color: var(--accent-t1); }
+    .track-card[data-track="2"] .track-title { color: var(--accent-t2); }
+    .track-card[data-track="3"] .track-title { color: var(--accent-t3); }
+    .track-card[data-track="4"] .track-title { color: var(--accent-t4); }
+
+    .track-actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .track-note-select {
+      width: 160px;
+      padding: 6px 10px;
+      font-size: 13px;
+    }
+
+    .btn-track-del {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 4px 8px;
+      font-size: 12px;
+      border-radius: 4px;
+    }
+
+    .btn-track-del:hover {
+      border-color: var(--danger-color);
+      color: var(--danger-color);
+      background: rgba(255, 71, 87, 0.1);
+    }
+
+    .input-save-wrapper {
+      display: flex;
+      gap: 10px;
+      align-items: stretch;
+    }
+
+    /* Input Field & Display Overlay Structure */
+    .typing-display-wrapper {
+      flex: 1;
+      position: relative;
+      background: var(--bg-color);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      min-height: 52px;
+      overflow-x: auto;
+    }
+
+    .typing-input-visible {
+      width: 100%;
+      height: 100%;
+      background: transparent !important;
+      border: none !important;
+      font-size: 30px !important;
+      font-weight: 800;
+      letter-spacing: 4px;
+      font-family: monospace;
+      outline: none !important;
+      box-shadow: none !important;
+      padding: 6px 0 !important;
+    }
+
+    .track-card[data-track="1"] .typing-input-visible { color: var(--accent-t1); caret-color: var(--accent-t1); }
+    .track-card[data-track="2"] .typing-input-visible { color: var(--accent-t2); caret-color: var(--accent-t2); }
+    .track-card[data-track="3"] .typing-input-visible { color: var(--accent-t3); caret-color: var(--accent-t3); }
+    .track-card[data-track="4"] .typing-input-visible { color: var(--accent-t4); caret-color: var(--accent-t4); }
+
+    .typing-overlay-display {
+      position: absolute;
+      top: 0;
+      left: 12px;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      font-size: 30px;
+      font-weight: 800;
+      letter-spacing: 4px;
+      font-family: monospace;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+
+    /* Natural Text Glow effect without rectangular background */
+    .char-node.active {
+      color: #ffffff !important;
+      background: transparent !important;
+      text-shadow: 0 0 8px #ffffff, 0 0 16px #ffffff, 0 0 24px rgba(255, 255, 255, 0.8);
+      transition: all 0.05s ease-out;
+    }
+
+    .btn-save-inline {
+      background: var(--gray-btn-bg);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      font-weight: 700;
+      white-space: nowrap;
+      padding: 0 16px;
+    }
+
+    .btn-save-inline:hover {
+      background: var(--gray-btn-hover);
+      border-color: var(--accent-t1);
+    }
+
+    .fader-wrapper {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 14px;
+      background: var(--bg-color);
+      padding: 8px 12px;
+      border-radius: 6px;
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-mute {
+      background: var(--gray-btn-bg);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 700;
+      border-radius: 4px;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-mute.active {
+      background: rgba(255, 71, 87, 0.2);
+      border-color: var(--danger-color);
+      color: var(--danger-color);
+    }
+
+    .fader-wrapper label {
+      margin-bottom: 0;
+      font-size: 11px;
+      white-space: nowrap;
+    }
+
+    .fader-input {
+      flex: 1;
+      cursor: pointer;
+    }
+
+    .track-card[data-track="1"] .fader-input { accent-color: var(--accent-t1); }
+    .track-card[data-track="2"] .fader-input { accent-color: var(--accent-t2); }
+    .track-card[data-track="3"] .fader-input { accent-color: var(--accent-t3); }
+    .track-card[data-track="4"] .fader-input { accent-color: var(--accent-t4); }
+
+    .vol-value {
+      font-size: 12px;
+      font-weight: bold;
+      width: 36px;
+      text-align: right;
+      color: var(--text-muted);
+    }
+
+    .master-controls {
+      display: flex;
+      gap: 12px;
+      margin-top: 15px;
+    }
+
+    .btn-toggle-play {
+      width: 100%;
+      background: rgba(0, 210, 255, 0.1);
+      border: 1px solid var(--accent-t1);
+      color: var(--accent-t1);
+      padding: 14px;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: 1px;
+    }
+
+    .btn-toggle-play:hover {
+      background: var(--accent-t1);
+      color: #000;
+      box-shadow: 0 0 12px rgba(0, 210, 255, 0.4);
+    }
+
+    .btn-toggle-play.playing {
+      background: rgba(255, 71, 87, 0.15);
+      border-color: var(--danger-color);
+      color: var(--danger-color);
+    }
+
+    .btn-toggle-play.playing:hover {
+      background: var(--danger-color);
+      color: #fff;
+      box-shadow: 0 0 12px rgba(255, 71, 87, 0.4);
+    }
+
+    /* Library Styles */
+    .library-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .btn-add-folder {
+      background: var(--gray-btn-bg);
+      color: var(--text-muted);
+      border: 1px solid var(--border-color);
+      font-size: 12px;
+    }
+
+    .btn-add-folder:hover {
+      color: var(--text-color);
+      background: var(--gray-btn-hover);
+      border-color: var(--accent-t1);
+    }
+
+    .folder-card {
+      background: var(--folder-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      transition: border-color 0.2s, background-color 0.2s;
+    }
+
+    .folder-card.drag-over {
+      border-color: var(--accent-t1);
+      background-color: rgba(0, 210, 255, 0.05);
+    }
+
+    .folder-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .folder-title {
+      font-weight: 700;
+      font-size: 13px;
+      color: var(--accent-t1);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .pattern-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+      min-height: 36px;
+      padding: 4px;
+      border-radius: 6px;
+    }
+
+    .pattern-tag {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      padding: 6px 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      cursor: grab;
+      user-select: none;
+      transition: transform 0.1s, border-color 0.2s;
+    }
+
+    .pattern-tag:active { cursor: grabbing; }
+    .pattern-tag.dragging { opacity: 0.4; border-color: var(--accent-t1); }
+
+    .pattern-val-btn {
+      color: var(--text-color);
+      font-weight: 700;
+      letter-spacing: 1px;
+      font-family: monospace;
+      font-size: 14px;
+    }
+
+    .btn-load-track {
+      background: transparent;
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      padding: 2px 5px;
+      font-size: 10px;
+      border-radius: 4px;
+    }
+
+    .btn-load-track.t1:hover { border-color: var(--accent-t1); color: var(--accent-t1); }
+    .btn-load-track.t2:hover { border-color: var(--accent-t2); color: var(--accent-t2); }
+    .btn-load-track.t3:hover { border-color: var(--accent-t3); color: var(--accent-t3); }
+    .btn-load-track.t4:hover { border-color: var(--accent-t4); color: var(--accent-t4); }
+
+    .btn-mini-del {
+      background: transparent;
+      color: var(--text-muted);
+      padding: 0 2px;
+      font-size: 12px;
+    }
+
+    .btn-mini-del:hover { color: var(--danger-color); }
+  </style>
+</head>
+<body>
+
+  <h1>Text Sampler</h1>
+
+  <!-- BPM Setting -->
+  <div class="control-group">
+    <label for="target-bpm">Master Tempo (BPM)</label>
+    <div class="bpm-control-wrapper">
+      <button class="btn-bpm-step" id="bpm-minus-5">-5</button>
+      <input type="number" id="target-bpm" class="bpm-input-large" value="120">
+      <button class="btn-bpm-step" id="bpm-plus-5">+5</button>
+    </div>
+  </div>
+
+  <!-- 1. Audio & Character Mapping (Accordion) -->
+  <div class="control-group">
+    <details class="accordion" open>
+      <summary>1. Audio & Character Mapping</summary>
+      <div class="accordion-content">
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+          <input type="text" id="target-char" placeholder="Char (e.g. a)" maxlength="2" style="width: 120px;">
+          <input type="file" id="audio-file" accept="audio/*">
+        </div>
+        <div class="mapping-list" id="mapping-list">
+          No audio mapped yet.
+        </div>
+        <button class="btn-clear" id="clear-all-btn" style="display: none;">Clear All Mappings</button>
+      </div>
+    </details>
+  </div>
+
+  <!-- 2. Multi Input Sequences & Mix Playback -->
+  <div class="control-group">
+    <div class="tracks-header-wrapper">
+      <label style="margin:0;">2. Input Sequences & Mix Playback</label>
+      <button class="btn-add-track" id="add-track-btn">＋ Add Track</button>
+    </div>
+
+    <!-- Dynamic Track Container -->
+    <div id="tracks-container"></div>
+
+    <!-- Combined Start / Stop Control -->
+    <div class="master-controls">
+      <button class="btn-toggle-play" id="master-toggle-btn">▶ Start</button>
+    </div>
+  </div>
+
+  <!-- 3. Pattern Library -->
+  <div class="control-group">
+    <div class="library-header">
+      <label style="margin: 0;">3. Pattern Library</label>
+      <button class="btn-add-folder" id="add-folder-btn">＋ New Folder</button>
+    </div>
+    <div id="library-container"></div>
+  </div>
+
+  <script>
+    let audioCtx = null;
+    const soundMap = {};
+
+    const activeTrackIds = [1, 2];
+    const trackTimers = { 1: null, 2: null, 3: null, 4: null };
+    const trackVolumes = { 1: 0.8, 2: 0.8, 3: 0.8, 4: 0.8 };
+    const trackMutes = { 1: false, 2: false, 3: false, 4: false };
+
+    let isPlaying = false;
+
+    // Library data
+    const libraryData = {
+      "Favorites": ["abc", "a-b-c", "aabbcc"],
+      "Rhythms": ["a---b---", "a-b-c-d-"]
+    };
+
+    let draggedItem = null;
+
+    const targetBpmInput = document.getElementById('target-bpm');
+    const bpmMinus5Btn = document.getElementById('bpm-minus-5');
+    const bpmPlus5Btn = document.getElementById('bpm-plus-5');
+    const targetCharInput = document.getElementById('target-char');
+    const fileInput = document.getElementById('audio-file');
+    const mappingList = document.getElementById('mapping-list');
+    const clearAllBtn = document.getElementById('clear-all-btn');
+
+    const tracksContainer = document.getElementById('tracks-container');
+    const addTrackBtn = document.getElementById('add-track-btn');
+    const addFolderBtn = document.getElementById('add-folder-btn');
+    const libraryContainer = document.getElementById('library-container');
+    const masterToggleBtn = document.getElementById('master-toggle-btn');
+
+    const noteSelectOptionsHTML = `
+      <option value="1">1/1</option>
+      <option value="2">1/2</option>
+      <option value="4">1/4</option>
+      <option value="8">1/8</option>
+      <option value="12">1/8 Triplet</option>
+      <option value="16" selected>1/16</option>
+      <option value="20">1/16 Quintuplet</option>
+      <option value="24">1/16 Sextuplet</option>
+    `;
+
+    function renderTracks() {
+      tracksContainer.innerHTML = '';
+      activeTrackIds.forEach(id => {
+        const card = document.createElement('div');
+        card.className = 'track-card';
+        card.setAttribute('data-track', id);
+
+        const deleteBtnHTML = id > 1 ? `<button class="btn-track-del" onclick="removeTrack(${id})">✕</button>` : '';
+
+        card.innerHTML = `
+          <div class="track-header">
+            <div class="track-title">Track ${id}</div>
+            <div class="track-actions">
+              <select id="note-type-${id}" class="track-note-select">
+                ${noteSelectOptionsHTML}
+              </select>
+              ${deleteBtnHTML}
+            </div>
+          </div>
+          <div class="input-save-wrapper">
+            <div class="typing-display-wrapper">
+              <input type="text" id="typing-input-${id}" class="typing-input-visible" placeholder="e.g. a-b-c-" value="">
+              <div id="typing-display-${id}" class="typing-overlay-display"></div>
+            </div>
+            <button class="btn-save-inline" onclick="handleQuickSave(${id})">💾 Save</button>
+          </div>
+          <div class="fader-wrapper">
+            <button class="btn-mute ${trackMutes[id] ? 'active' : ''}" id="mute-btn-${id}" onclick="toggleMute(${id})">MUTE</button>
+            <label>VOL</label>
+            <input type="range" id="vol-fader-${id}" class="fader-input" min="0" max="1" step="0.01" value="${trackVolumes[id]}">
+            <span class="vol-value" id="vol-val-${id}">${Math.round(trackVolumes[id] * 100)}%</span>
+          </div>
+        `;
+
+        tracksContainer.appendChild(card);
+
+        const fader = card.querySelector(`#vol-fader-${id}`);
+        const valDisp = card.querySelector(`#vol-val-${id}`);
+        fader.addEventListener('input', (e) => {
+          const val = parseFloat(e.target.value);
+          trackVolumes[id] = val;
+          valDisp.textContent = `${Math.round(val * 100)}%`;
+        });
+
+        const inputEl = card.querySelector(`#typing-input-${id}`);
+        inputEl.addEventListener('input', (e) => {
+          updateTrackTextDisplay(id, e.target.value);
+
+          if (!audioCtx || trackMutes[id]) return;
+          if (audioCtx.state === 'suspended') audioCtx.resume();
+
+          const lastChar = e.target.value.slice(-1).toLowerCase();
+          if (soundMap[lastChar]) {
+            playSound(soundMap[lastChar].buffer, trackVolumes[id]);
+          }
+        });
+
+        // Hide overlay display when focused for clean typing
+        inputEl.addEventListener('focus', () => {
+          const displayEl = document.getElementById(`typing-display-${id}`);
+          if (displayEl && !isPlaying) displayEl.style.opacity = '0';
+        });
+
+        inputEl.addEventListener('blur', () => {
+          const displayEl = document.getElementById(`typing-display-${id}`);
+          if (displayEl) displayEl.style.opacity = '1';
+        });
+      });
+
+      addTrackBtn.disabled = activeTrackIds.length >= 4;
+      updateLibraryUI();
+    }
+
+    function updateTrackTextDisplay(trackId, text) {
+      const displayEl = document.getElementById(`typing-display-${trackId}`);
+      if (!displayEl) return;
+
+      displayEl.innerHTML = '';
+      for (let i = 0; i < text.length; i++) {
+        const span = document.createElement('span');
+        span.className = 'char-node';
+        span.setAttribute('data-index', i);
+        span.textContent = text[i];
+        displayEl.appendChild(span);
+      }
+    }
+
+    function setTrackValue(trackId, val) {
+      const inputEl = document.getElementById(`typing-input-${trackId}`);
+      if (inputEl) {
+        inputEl.value = val;
+        updateTrackTextDisplay(trackId, val);
+      }
+    }
+
+    function highlightActiveChar(trackId, index) {
+      const displayEl = document.getElementById(`typing-display-${trackId}`);
+      const inputEl = document.getElementById(`typing-input-${trackId}`);
+      if (!displayEl || !inputEl) return;
+
+      // Make overlay visible during playback
+      displayEl.style.opacity = '1';
+      inputEl.style.color = 'transparent';
+
+      const nodes = displayEl.querySelectorAll('.char-node');
+      nodes.forEach(node => node.classList.remove('active'));
+
+      if (nodes[index]) {
+        nodes[index].classList.add('active');
+      }
+    }
+
+    function clearTrackHighlights(trackId) {
+      const displayEl = document.getElementById(`typing-display-${trackId}`);
+      const inputEl = document.getElementById(`typing-input-${trackId}`);
+      if (displayEl) {
+        const nodes = displayEl.querySelectorAll('.char-node');
+        nodes.forEach(node => node.classList.remove('active'));
+      }
+      if (inputEl) {
+        inputEl.style.color = ''; // Restore native theme color
+      }
+    }
+
+    addTrackBtn.addEventListener('click', () => {
+      if (activeTrackIds.length < 4) {
+        const nextId = [1, 2, 3, 4].find(id => !activeTrackIds.includes(id));
+        activeTrackIds.push(nextId);
+        activeTrackIds.sort();
+        renderTracks();
+        if (isPlaying) runTrackLoop(nextId);
+      }
+    });
+
+    window.removeTrack = function(id) {
+      if (id === 1) return;
+      
+      if (trackTimers[id]) {
+        clearTimeout(trackTimers[id]);
+        trackTimers[id] = null;
+      }
+
+      const index = activeTrackIds.indexOf(id);
+      if (index > -1) {
+        activeTrackIds.splice(index, 1);
+        renderTracks();
+      }
+    };
+
+    window.toggleMute = function(id) {
+      trackMutes[id] = !trackMutes[id];
+      const btn = document.getElementById(`mute-btn-${id}`);
+      if (btn) {
+        btn.classList.toggle('active', trackMutes[id]);
+      }
+    };
+
+    bpmMinus5Btn.addEventListener('click', () => {
+      let currentVal = parseInt(targetBpmInput.value, 10) || 120;
+      targetBpmInput.value = Math.max(1, currentVal - 5);
+    });
+
+    bpmPlus5Btn.addEventListener('click', () => {
+      let currentVal = parseInt(targetBpmInput.value, 10) || 120;
+      targetBpmInput.value = currentVal + 5;
+    });
+
+    fileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      const char = targetCharInput.value.trim().toLowerCase();
+
+      if (!char) {
+        alert('Please enter a target character first.');
+        fileInput.value = '';
+        return;
+      }
+      if (!file) return;
+
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+
+      const arrayBuffer = await file.arrayBuffer();
+      const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+
+      soundMap[char] = {
+        buffer: audioBuffer,
+        fileName: file.name
+      };
+
+      updateMappingUI();
+      targetCharInput.value = '';
+      fileInput.value = '';
+    });
+
+    function updateMappingUI() {
+      const keys = Object.keys(soundMap);
+      if (keys.length === 0) {
+        mappingList.innerHTML = 'No audio mapped yet.';
+        clearAllBtn.style.display = 'none';
+        return;
+      }
+
+      mappingList.innerHTML = '';
+      clearAllBtn.style.display = 'block';
+
+      for (const char in soundMap) {
+        const item = document.createElement('div');
+        item.className = 'mapping-item';
+
+        const info = document.createElement('span');
+        info.className = 'mapping-info';
+        info.textContent = `[ ${char} ] ➔ ${soundMap[char].fileName}`;
+
+        const btnGroup = document.createElement('div');
+        btnGroup.className = 'btn-group';
+
+        const playBtn = document.createElement('button');
+        playBtn.className = 'btn-play';
+        playBtn.textContent = '▶ Play';
+        playBtn.onclick = () => playSound(soundMap[char].buffer, 1.0);
+
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'btn-delete';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.onclick = () => {
+          delete soundMap[char];
+          updateMappingUI();
+        };
+
+        btnGroup.appendChild(playBtn);
+        btnGroup.appendChild(deleteBtn);
+        item.appendChild(info);
+        item.appendChild(btnGroup);
+        mappingList.appendChild(item);
+      }
+    }
+
+    clearAllBtn.addEventListener('click', () => {
+      if (confirm('Are you sure you want to clear all audio mappings?')) {
+        for (const key in soundMap) delete soundMap[key];
+        stopAllTracks();
+        updateMappingUI();
+      }
+    });
+
+    function playSound(buffer, volume = 1.0) {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      const source = audioCtx.createBufferSource();
+      const gainNode = audioCtx.createGain();
+
+      source.buffer = buffer;
+      source.playbackRate.value = 1.0;
+      gainNode.gain.value = volume;
+
+      source.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+
+      source.start(0);
+    }
+
+    function runTrackLoop(trackId) {
+      const inputEl = document.getElementById(`typing-input-${trackId}`);
+      const noteTypeEl = document.getElementById(`note-type-${trackId}`);
+
+      if (!inputEl || !noteTypeEl) return;
+
+      const text = inputEl.value.toLowerCase().trim();
+      if (!text) return;
+
+      let index = 0;
+      const playNext = () => {
+        if (!isPlaying || !activeTrackIds.includes(trackId)) return;
+
+        highlightActiveChar(trackId, index);
+
+        const char = text[index];
+        if (soundMap[char] && !trackMutes[trackId]) {
+          playSound(soundMap[char].buffer, trackVolumes[trackId]);
+        }
+        index = (index + 1) % text.length;
+
+        const targetBpm = parseFloat(targetBpmInput.value) || 120;
+        const noteType = parseInt(noteTypeEl.value, 10);
+
+        const quarterNoteMs = (60 / targetBpm) * 1000;
+        let interval = (quarterNoteMs * 4) / noteType;
+
+        trackTimers[trackId] = setTimeout(playNext, interval);
+      };
+
+      playNext();
+    }
+
+    masterToggleBtn.addEventListener('click', () => {
+      if (isPlaying) {
+        stopAllTracks();
+      } else {
+        startAllTracks();
+      }
+    });
+
+    function startAllTracks() {
+      stopAllTracks();
+      isPlaying = true;
+
+      activeTrackIds.forEach(id => runTrackLoop(id));
+
+      masterToggleBtn.textContent = '■ Stop';
+      masterToggleBtn.classList.add('playing');
+    }
+
+    function stopAllTracks() {
+      isPlaying = false;
+      [1, 2, 3, 4].forEach(id => {
+        if (trackTimers[id]) {
+          clearTimeout(trackTimers[id]);
+          trackTimers[id] = null;
+        }
+        clearTrackHighlights(id);
+      });
+
+      masterToggleBtn.textContent = '▶ Start';
+      masterToggleBtn.classList.remove('playing');
+    }
+
+    window.handleQuickSave = function(trackId) {
+      const inputEl = document.getElementById(`typing-input-${trackId}`);
+      const textValue = inputEl ? inputEl.value.trim() : '';
+      if (!textValue) {
+        alert('Please enter a text sequence to save.');
+        return;
+      }
+
+      const folderKeys = Object.keys(libraryData);
+      if (folderKeys.length === 0) {
+        alert('No folders available. Please create a folder first.');
+        return;
+      }
+
+      let targetFolder = folderKeys[0];
+      if (folderKeys.length > 1) {
+        const folderListStr = folderKeys.map((f, i) => `${i + 1}: ${f}`).join('\n');
+        const selectedIndex = prompt(`Select target folder number:\n${folderListStr}`, '1');
+        const idx = parseInt(selectedIndex, 10) - 1;
+        if (isNaN(idx) || !folderKeys[idx]) {
+          alert('Invalid folder selection.');
+          return;
+        }
+        targetFolder = folderKeys[idx];
+      }
+
+      libraryData[targetFolder].push(textValue);
+      updateLibraryUI();
+    };
+
+    addFolderBtn.addEventListener('click', () => {
+      const folderName = prompt('Enter new folder name:');
+      if (!folderName) return;
+      if (libraryData[folderName]) {
+        alert('A folder with this name already exists.');
+        return;
+      }
+
+      libraryData[folderName] = [];
+      updateLibraryUI();
+    });
+
+    function updateLibraryUI() {
+      libraryContainer.innerHTML = '';
+      const folderKeys = Object.keys(libraryData);
+
+      if (folderKeys.length === 0) {
+        libraryContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 13px;">No folders found. Click "+ New Folder" to create one.</div>';
+        return;
+      }
+
+      folderKeys.forEach(fName => {
+        const card = document.createElement('div');
+        card.className = 'folder-card';
+
+        card.addEventListener('dragover', (e) => {
+          e.preventDefault();
+          card.classList.add('drag-over');
+        });
+
+        card.addEventListener('dragleave', () => {
+          card.classList.remove('drag-over');
+        });
+
+        card.addEventListener('drop', (e) => {
+          e.preventDefault();
+          card.classList.remove('drag-over');
+
+          if (!draggedItem) return;
+
+          const sourceFolder = draggedItem.folder;
+          const sourceIndex = draggedItem.index;
+
+          const [movedVal] = libraryData[sourceFolder].splice(sourceIndex, 1);
+          libraryData[fName].push(movedVal);
+
+          draggedItem = null;
+          updateLibraryUI();
+        });
+
+        const header = document.createElement('div');
+        header.className = 'folder-header';
+
+        const title = document.createElement('div');
+        title.className = 'folder-title';
+        title.innerHTML = `📁 ${fName}`;
+
+        const delFolderBtn = document.createElement('button');
+        delFolderBtn.className = 'btn-delete';
+        delFolderBtn.style.padding = '2px 6px';
+        delFolderBtn.style.fontSize = '11px';
+        delFolderBtn.textContent = 'Delete';
+        delFolderBtn.onclick = () => {
+          if (confirm(`Delete folder "${fName}"?`)) {
+            delete libraryData[fName];
+            updateLibraryUI();
+          }
+        };
+
+        header.appendChild(title);
+        header.appendChild(delFolderBtn);
+        card.appendChild(header);
+
+        const listContainer = document.createElement('div');
+        listContainer.className = 'pattern-list';
+
+        if (libraryData[fName].length === 0) {
+          const emptyText = document.createElement('span');
+          emptyText.style.color = 'var(--text-muted)';
+          emptyText.style.fontSize = '12px';
+          emptyText.style.alignSelf = 'center';
+          emptyText.textContent = '(Drag items here)';
+          listContainer.appendChild(emptyText);
+        } else {
+          libraryData[fName].forEach((val, index) => {
+            const tag = document.createElement('div');
+            tag.className = 'pattern-tag';
+            tag.draggable = true;
+
+            tag.addEventListener('dragstart', (e) => {
+              draggedItem = { folder: fName, index: index };
+              tag.classList.add('dragging');
+              e.dataTransfer.effectAllowed = 'move';
+            });
+
+            tag.addEventListener('dragend', () => {
+              tag.classList.remove('dragging');
+              draggedItem = null;
+            });
+
+            const valBtn = document.createElement('span');
+            valBtn.className = 'pattern-val-btn';
+            valBtn.textContent = val;
+
+            tag.appendChild(valBtn);
+
+            activeTrackIds.forEach(tId => {
+              const loadBtn = document.createElement('button');
+              loadBtn.className = `btn-load-track t${tId}`;
+              loadBtn.textContent = `To T${tId}`;
+              loadBtn.onclick = () => {
+                setTrackValue(tId, val);
+              };
+              tag.appendChild(loadBtn);
+            });
+
+            const delPatBtn = document.createElement('button');
+            delPatBtn.className = 'btn-mini-del';
+            delPatBtn.textContent = '✕';
+            delPatBtn.onclick = (e) => {
+              e.stopPropagation();
+              libraryData[fName].splice(index, 1);
+              updateLibraryUI();
+            };
+
+            tag.appendChild(delPatBtn);
+            listContainer.appendChild(tag);
+          });
+        }
+
+        card.appendChild(listContainer);
+        libraryContainer.appendChild(card);
+      });
+    }
+
+    renderTracks();
+  </script>
+</body>
+</html>
